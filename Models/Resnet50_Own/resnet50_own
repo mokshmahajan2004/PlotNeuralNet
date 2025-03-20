@@ -1,0 +1,53 @@
+import sys
+sys.path.append('D:/Research Paper Visualizations/PlotNeuralNet')
+from pycore.tikzeng import *
+from pycore.blocks import *
+
+arch = [
+    to_head('..'),
+    to_cor(),
+    to_begin(),
+
+    # Input Image
+    to_input('drowsy.png', name='input'),
+    
+    # Initial Convolution and MaxPooling
+    to_ConvConvRelu(name='conv1', s_filer=224, n_filer=(64, 64), offset="(0,0,0)"),
+    to_Pool(name='pool1', offset="(0,0,0)", to="(conv1-east)", width=1, height=20, depth=20, opacity=0.5),
+    
+    # ResNet-50 Block 1
+    *block_Res(name='res2', botton='pool1', top='res2_out', num=3, s_filer=56, n_filer=(64, 64, 256), offset="(1,0,0)", size=(32,32,3.5), opacity=0.5),
+
+    # ResNet-50 Block 2
+    *block_Res(name='res3', botton='res2_out', top='res3_out', num=4, s_filer=28, n_filer=(128, 128, 512), offset="(1,0,0)", size=(25,25,4.5), opacity=0.5),
+
+    # ResNet-50 Block 3
+    *block_Res(name='res4', botton='res3_out', top='res4_out', num=6, s_filer=14, n_filer=(256, 256, 1024), offset="(1,0,0)", size=(16,16,5.5), opacity=0.5),
+
+    # ResNet-50 Block 4
+    *block_Res(name='res5', botton='res4_out', top='res5_out', num=3, s_filer=7, n_filer=(512, 512, 2048), offset="(1,0,0)", size=(8,8,6.5), opacity=0.5),
+
+    # Global Average Pooling Layer
+    to_Pool(name='gap', offset="(2,0,0)", to="(res5_out-east)", width=1, height=1, depth=40, caption='Global Avg Pool'),
+    to_connection('res5_out', 'gap'),
+    
+    # Fully Connected Layers
+    to_FullyConnected(name='fc1', s_filer=1, offset="(1,0,0)", to="(gap-east)", width=1, height=1, depth=30, caption='Dense 1024'),
+    to_connection('gap', 'fc1'),
+    
+    to_FullyConnected(name='fc2', s_filer=1, offset="(1,0,0)", to="(fc1-east)", width=1, height=1, depth=20, caption='Dense Softmax'),
+    to_connection('fc1', 'fc2'),
+    
+    to_SoftMax(name='softmax', s_filer=5, offset="(1,0,0)", to="(fc2-east)", caption='Output'),
+    to_connection('fc2', 'softmax'),
+    
+    to_end()
+]
+
+def main():
+    namefile = str(sys.argv[0]).split('.')[0]
+    to_generate(arch, namefile + '.tex')
+
+
+if __name__ == '__main__':
+    main()
