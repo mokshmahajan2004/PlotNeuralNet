@@ -51,6 +51,39 @@ def block_4ConvPool(name, botton, top, s_filer, n_filer, offset, size, opacity):
         to_Pool(name=top, offset="(0,0,0)", to=f'(ccr_{name}4-east)', width=1, height=size[0] * 0.8, depth=size[1] * 0.8, opacity=opacity),
     ]
 
+def block_Dense(name, botton, top, s_filer=256, n_filer=64, num_layers=6, growth_rate=32, offset="(1,0,0)", size=(32,32,3.5), opacity=0.5):
+    layers = []
+    last_layer = botton  # Start with the input layer
+
+    for i in range(num_layers):
+        layer_name = f"{name}_layer{i+1}"
+        
+        # Add a convolutional layer
+        layers.append(
+            to_Conv(
+                name=layer_name,
+                offset=offset,
+                to=f"({last_layer}-east)",
+                s_filer=str(s_filer),
+                n_filer=str(n_filer + i * growth_rate),  # Filters increase with growth rate
+                width=size[2],
+                height=size[0],
+                depth=size[1]
+            )
+        )
+        
+        # Create direct connections from previous layers to simulate feature concatenation
+        for j in range(i + 1):  # Connect all previous layers
+            layers.append(to_connection(f"{name}_layer{j+1}" if j > 0 else botton, layer_name))
+
+        last_layer = layer_name  # Update last_layer
+
+    # Connect all layers to the transition layer
+    for i in range(num_layers):
+        layers.append(to_connection(f"{name}_layer{i+1}", top))
+
+    return layers
+
 
 
 def block_Res( num, name, botton, top, s_filer=256, n_filer=64, offset="(0,0,0)", size=(32,32,3.5), opacity=0.5 ):
